@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import distro
+from torch.cuda import is_available as torch_cuda_available
 
 ROOT = Path(__file__).parent.parent
 VERSION = importlib.metadata.version("lineremovernn")
@@ -15,3 +16,4 @@ elif platform.system() == "Darwin":
 elif platform.system() == "Linux":
     OS = distro.name(pretty=True)
 ARCH = " ".join(platform.architecture())
+DEVICE = "cuda" if torch_cuda_available() else "cpu"

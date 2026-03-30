@@ -14,3 +14,4 @@ logs/
 
 # Dataset files
 lineremovernn/data/iam/
+lineremovernn/data/pages/

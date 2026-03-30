@@ -61,6 +61,14 @@ class DownloadDatasetCommand(Command):
                 "Extracted dataset already exists. Use --force-extract to re-extract."
             )
 
+        logger.info("Moving the words.txt file to the dataset root...")
+        if not (install_dir / "words.txt").exists() or args.force_extract:
+            (dataset_path / "words.txt").rename(install_dir / "words.txt")
+        else:
+            logger.warning(
+                "words.txt already exists. Use --force-extract to move it again."
+            )
+
         logger.info("Done.")
 
     def _download_and_unzip(
