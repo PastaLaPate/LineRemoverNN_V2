@@ -8,7 +8,7 @@ import tqdm
 
 from lineremovernn.commands.command import Command
 from lineremovernn.utils import logging
-from lineremovernn.utils.consts import ROOT
+from lineremovernn.utils.consts import DEFAULT_IAM, ROOT, SAVED
 
 logger = logging.get_logger("DatasetDownloader")
 
@@ -25,7 +25,7 @@ class DownloadDatasetCommand(Command):
             "--output-dir",
             type=Path,
             required=False,
-            default="data/iam",
+            default=DEFAULT_IAM,
             help="Directory to save the downloaded dataset.",
         )
         parser.add_argument(
@@ -40,7 +40,12 @@ class DownloadDatasetCommand(Command):
         )
 
     def execute(self, args):
-        install_dir = Path.absolute(ROOT / args.output_dir)
+        install_dir = (
+            Path.absolute(SAVED / args.output_dir)
+            if args.output_dir.is_relative_to(ROOT)
+            else Path.absolute(args.output_dir)
+        )
+        install_dir.mkdir(parents=True, exist_ok=True)
         logger.info("Installing the IAM dataset to %s", install_dir)
         dataset_path = install_dir / "IAM_Words"
 

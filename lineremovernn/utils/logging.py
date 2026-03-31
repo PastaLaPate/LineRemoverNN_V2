@@ -3,6 +3,8 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
+from lineremovernn.utils.consts import DEFAULT_LOGS
+
 
 class _ColorFormatter(logging.Formatter):
     _COLORS = {
@@ -74,7 +76,7 @@ def get_logger(
     log_dir: Path | None = None,
 ) -> logging.Logger:
     if log_dir is None:
-        log_dir = Path(__file__).parent.parent.parent / "logs"
+        log_dir = DEFAULT_LOGS
 
     _configure_root(log_dir)
     return logging.getLogger(f"LineRemoverNN.{name}")

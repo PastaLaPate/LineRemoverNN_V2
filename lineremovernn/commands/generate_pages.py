@@ -3,7 +3,7 @@ from pathlib import Path
 from lineremovernn.commands.command import Command
 from lineremovernn.data.page_generator import PageGenerator
 from lineremovernn.utils import logging
-from lineremovernn.utils.consts import ROOT
+from lineremovernn.utils.consts import DEFAULT_IAM, DEFAULT_PAGES, ROOT
 
 logger = logging.get_logger("DatasetDownloader")
 
@@ -20,14 +20,14 @@ class GeneratePagesCommand(Command):
             "--dataset-dir",
             type=Path,
             required=False,
-            default="data/iam",
+            default=DEFAULT_IAM,
             help="Directory where is the downloaded dataset.",
         )
         parser.add_argument(
             "--output-dir",
             type=Path,
             required=False,
-            default="data/pages",
+            default=DEFAULT_PAGES,
             help="Directory to save the generated pages.",
         )
         parser.add_argument(

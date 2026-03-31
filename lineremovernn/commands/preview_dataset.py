@@ -5,7 +5,7 @@ from pathlib import Path
 from lineremovernn.commands.command import Command
 from lineremovernn.data.dataset import PagesDataset
 from lineremovernn.utils import logging
-from lineremovernn.utils.consts import ROOT
+from lineremovernn.utils.consts import DEFAULT_PAGES, ROOT
 
 logger = logging.get_logger("DatasetPreviewer")
 
@@ -22,7 +22,7 @@ class PreviewDataset(Command):
             "--dataset-dir",
             type=Path,
             required=False,
-            default="data/pages",
+            default=DEFAULT_PAGES,
             help="Path to the dataset directory containing 'blank' and 'ruled' subdirectories.",
         )
         parser.add_argument(
