@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.dataset import random_split
 from tqdm import tqdm
 
-from lineremovernn.data.dataset import PagesDataset
+from lineremovernn.data.pages_dataset import PagesDataset
 from lineremovernn.model import models
 from lineremovernn.model.model import LineRemoverNN
 from lineremovernn.model.models import ModelState, ModelStats, save_model
@@ -31,8 +31,8 @@ def train_epoch(
     for blank, ruled in bar:
         ruled, blank = ruled.to(device), blank.to(device)
         optimizer.zero_grad()
-        pred = model(ruled)
-        loss = criterion(pred, blank, ruled)
+        pred, mask = model(ruled)
+        loss = criterion(pred, mask, blank, ruled)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
@@ -53,8 +53,8 @@ def val_epoch(
     bar = tqdm(loader, desc=f"Epoch {epoch:03d} [val]  ", unit="batch", leave=False)
     for ruled, blank in bar:
         ruled, blank = ruled.to(device), blank.to(device)
-        pred = model(ruled)
-        loss = criterion(pred, blank, ruled)
+        pred, mask = model(ruled)
+        loss = criterion(pred, mask, blank, ruled)
         total_loss += loss.item()
         bar.set_postfix(loss=f"{loss.item():.4f}")
     return total_loss / len(loader)

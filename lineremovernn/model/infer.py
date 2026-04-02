@@ -37,7 +37,8 @@ def infer(model: LineRemoverNN, image_path: Path, output_path: Path) -> None:
                 if pad_h > 0 or pad_w > 0:
                     tile = F.pad(tile, [0, pad_w, 0, pad_h])
 
-                pred = model(tile.unsqueeze(0).to(DEVICE)).squeeze(0).cpu()
+                pred, mask = model(tile.unsqueeze(0).to(DEVICE))
+                pred = pred.squeeze(0).cpu()
 
                 th = min(TILE_SIZE, h - y)
                 tw = min(TILE_SIZE, w - x)

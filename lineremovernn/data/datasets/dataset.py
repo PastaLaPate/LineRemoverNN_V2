@@ -1,25 +1,28 @@
-import tarfile
-import tqdm
-
 from abc import ABC
-from pathlib import Path
 from io import BytesIO
+from pathlib import Path
 from urllib.request import urlopen
 from zipfile import ZipFile
 
+import tqdm
+
+
 class Dataset(ABC):
     ID = "XXX"
-    INSTALL_PATH = Path(ID)
-    DOWNLOAD_PATH = Path("downloads") / ID
+
+    def __init__(self) -> None:
+        self.INSTALL_PATH = Path(self.ID)
+        self.DOWNLOAD_PATH = Path("downloads") / self.ID
+        super().__init__()
 
     def download(self, path: Path, force: bool) -> None:
         """Download the dataset to the specified path."""
         raise NotImplementedError("Subclasses must implement this method.")
-    
+
     def extract(self, path: Path, force: bool) -> None:
         """Extract the dataset from the specified path."""
         raise NotImplementedError("Subclasses must implement this method.")
-    
+
     def _download_and_unzip(
         self, url: str, extract_to: Path, chunk_size: int = 1024 * 1024
     ) -> None:

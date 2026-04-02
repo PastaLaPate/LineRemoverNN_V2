@@ -36,12 +36,10 @@ def _gaussian_kernel(size: int, sigma: float, channels: int) -> torch.Tensor:
     return kernel.expand(channels, 1, size, size).contiguous()
 
 
-def criterion(
-    pred: torch.Tensor, target: torch.Tensor, ruled: torch.Tensor
-) -> torch.Tensor:
-    # Image reconstruction loss
-    reconstruction = 0.7 * F.l1_loss(pred, target) + 0.3 * ssim_loss(pred, target)
-    # Mask sparsity — lines should cover a small fraction of the page
-    mask = ruled - pred
-    sparsity = 0.1 * mask.mean()
-    return reconstruction + sparsity
+def criterion(pred, mask, blank, ruled):
+    target_mask = (blank - ruled).clamp(0, 1)
+    mask_loss = F.l1_loss(mask, target_mask)
+    ssim = ssim_loss(pred, blank)
+    # penalize if mask is zero where it should not be
+    presence_loss = F.binary_cross_entropy(mask, (target_mask > 0.05).float())
+    return mask_loss + 0.3 * ssim + 0.1 * presence_loss

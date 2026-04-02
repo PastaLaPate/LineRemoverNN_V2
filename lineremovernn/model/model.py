@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -96,7 +98,7 @@ class LineRemoverNN(nn.Module):
 
         self.out = nn.Conv2d(ch[0], 1, kernel_size=1)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         e1 = self.enc1(x)
         e2 = self.enc2(self.pool(e1))
         e3 = self.enc3(self.pool(e2))
@@ -109,4 +111,4 @@ class LineRemoverNN(nn.Module):
         d2 = self.dec2(d3, e2)
         d1 = self.dec1(d2, e1)
         mask = torch.sigmoid(self.out(d1))  # predicted lines, in [0,1]
-        return (x + mask).clamp(0, 1)
+        return ((x + mask).clamp(0, 1), mask)
