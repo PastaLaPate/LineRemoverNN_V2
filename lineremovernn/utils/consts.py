@@ -7,7 +7,7 @@ import distro
 from torch.cuda import is_available as torch_cuda_available
 
 ROOT = Path(__file__).parent.parent
-SAVED = ROOT / "saved"
+SAVED = ROOT.parent / "saved"
 
 DEFAULT_IAM = SAVED / "datasets/iam"
 DEFAULT_PAGES = SAVED / "datasets/pages"

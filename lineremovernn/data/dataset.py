@@ -1,7 +1,12 @@
+import random
 from pathlib import Path
 
 from torch.utils.data import Dataset
 from torchvision.io import ImageReadMode, decode_image
+from torchvision.transforms import functional as F
+from torchvision.transforms.v2.functional import crop
+
+from lineremovernn.utils.tiles import TILE_SIZE
 
 
 class PagesDataset(Dataset):
@@ -33,10 +38,30 @@ class PagesDataset(Dataset):
         return len(self.blank_paths)
 
     def __getitem__(self, index: int):
-        blank_path = self.blank_paths[index]
-        ruled_path = self.ruled_paths[index]
-        blank = decode_image(str(blank_path), ImageReadMode.GRAY).float() / 255.0
-        ruled = decode_image(str(ruled_path), ImageReadMode.GRAY).float() / 255.0
+        blank = (
+            decode_image(str(self.blank_paths[index]), ImageReadMode.GRAY).float()
+            / 255.0
+        )
+        ruled = (
+            decode_image(str(self.ruled_paths[index]), ImageReadMode.GRAY).float()
+            / 255.0
+        )
+
+        _, h, w = ruled.shape
+
+        pad_h = max(0, TILE_SIZE - h)
+        pad_w = max(0, TILE_SIZE - w)
+        if pad_h > 0 or pad_w > 0:
+            blank = F.pad(blank, [0, pad_w, 0, pad_h])
+            ruled = F.pad(ruled, [0, pad_w, 0, pad_h])
+            h, w = h + pad_h, w + pad_w
+
+        top = random.randint(0, h - TILE_SIZE)
+        left = random.randint(0, w - TILE_SIZE)
+        blank = crop(blank, top, left, TILE_SIZE, TILE_SIZE)
+        ruled = crop(ruled, top, left, TILE_SIZE, TILE_SIZE)
+
         if self.transform:
             blank, ruled = self.transform(blank, ruled)
+
         return blank, ruled

@@ -10,8 +10,5 @@ wheels/
 .venv
 
 # Logs
-logs/
-
-# Dataset files
-lineremovernn/data/iam/
-lineremovernn/data/pages/
+saved/
+!saved/models/
