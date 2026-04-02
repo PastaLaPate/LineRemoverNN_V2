@@ -22,21 +22,27 @@ class DownloadDatasetCommand(Command):
 
     def init_parser(self, parser):
         parser.add_argument(
+            "-o",
             "--output-dir",
             type=Path,
             required=False,
-            default="data/iam",
+            default="DEFAULT",
             help="Directory to save the downloaded dataset.",
         )
         parser.add_argument(
+            "-d",
             "--force-download",
             action="store_true",
             help="Force re-download even if the dataset already exists.",
         )
         parser.add_argument(
+            "-e",
             "--force-extract",
             action="store_true",
             help="Force re-extract even if the dataset has been extracted.",
+        )
+        parser.add_argument(
+            
         )
 
     def execute(self, args):
