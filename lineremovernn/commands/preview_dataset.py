@@ -3,7 +3,7 @@ import random
 from pathlib import Path
 
 from lineremovernn.commands.command import Command
-from lineremovernn.data.dataset import PagesDataset
+from lineremovernn.data.pages_dataset import PagesDataset
 from lineremovernn.utils import logging
 from lineremovernn.utils.consts import ROOT
 
