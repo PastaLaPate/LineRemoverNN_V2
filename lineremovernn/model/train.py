@@ -25,7 +25,7 @@ def train_epoch(model, loader, optimizer, device, epoch) -> float:
     scaler = GradScaler("cuda")  # Handles loss scaling for FP16
     bar = tqdm(loader, desc=f"Epoch {epoch:03d} [train]", unit="batch")
 
-    for blank, ruled in bar:  # Fixed unpacking order!
+    for blank, ruled in bar:
         ruled, blank = ruled.to(device), blank.to(device)
         optimizer.zero_grad()
 
