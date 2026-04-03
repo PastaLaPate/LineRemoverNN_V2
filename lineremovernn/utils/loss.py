@@ -36,10 +36,17 @@ def _gaussian_kernel(size: int, sigma: float, channels: int) -> torch.Tensor:
     return kernel.expand(channels, 1, size, size).contiguous()
 
 
-def criterion(pred, mask, blank, ruled):
+def criterion(pred, logits, blank, ruled):
     target_mask = (blank - ruled).clamp(0, 1)
+
+    # Re-create the mask for the L1 loss
+    mask = torch.sigmoid(logits)
     mask_loss = F.l1_loss(mask, target_mask)
+
     ssim = ssim_loss(pred, blank)
-    # penalize if mask is zero where it should not be
-    presence_loss = F.binary_cross_entropy(mask, (target_mask > 0.05).float())
+
+    presence_loss = F.binary_cross_entropy_with_logits(
+        logits, (target_mask > 0.05).float()
+    )
+
     return mask_loss + 0.3 * ssim + 0.1 * presence_loss

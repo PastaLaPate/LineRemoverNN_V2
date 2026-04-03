@@ -110,5 +110,6 @@ class LineRemoverNN(nn.Module):
         d3 = self.dec3(d4, e3)
         d2 = self.dec2(d3, e2)
         d1 = self.dec1(d2, e1)
-        mask = torch.sigmoid(self.out(d1))  # predicted lines, in [0,1]
-        return ((x + mask).clamp(0, 1), mask)
+        logits = self.out(d1)
+        mask = torch.sigmoid(logits)
+        return ((x + mask).clamp(0, 1), logits)
