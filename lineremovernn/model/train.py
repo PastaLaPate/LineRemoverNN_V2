@@ -85,6 +85,7 @@ def run(
         shuffle=True,
         num_workers=workers,
         pin_memory=True,
+        persistent_workers=True,
     )
     val_loader = DataLoader(
         val_dataset,
@@ -92,6 +93,7 @@ def run(
         shuffle=False,
         num_workers=workers,
         pin_memory=True,
+        persistent_workers=True,
     )
 
     model = LineRemoverNN(channels=channels).to(device)
