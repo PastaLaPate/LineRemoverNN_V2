@@ -2,6 +2,7 @@ from time import time_ns
 from typing import cast
 
 import torch
+from torch.amp import GradScaler, autocast  # type: ignore
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import random_split
 from tqdm import tqdm
@@ -18,24 +19,28 @@ from lineremovernn.utils.paired_transform import PairedTransform
 logger = logging.get_logger("Trainer")
 
 
-def train_epoch(
-    model: LineRemoverNN,
-    loader: DataLoader,
-    optimizer: torch.optim.Optimizer,
-    device: torch.device,
-    epoch: int,
-) -> float:
+def train_epoch(model, loader, optimizer, device, epoch) -> float:
     model.train()
     total_loss = 0.0
-    bar = tqdm(loader, desc=f"Epoch {epoch:03d} [train]", unit="batch", leave=False)
-    for blank, ruled in bar:
+    scaler = GradScaler("cuda")  # Handles loss scaling for FP16
+    bar = tqdm(loader, desc=f"Epoch {epoch:03d} [train]", unit="batch")
+
+    for blank, ruled in bar:  # Fixed unpacking order!
         ruled, blank = ruled.to(device), blank.to(device)
         optimizer.zero_grad()
-        pred, mask = model(ruled)
-        loss = criterion(pred, mask, blank, ruled)
-        loss.backward()
+
+        # Runs the forward pass in mixed precision
+        with autocast("cuda"):
+            pred, mask = model(ruled)
+            loss = criterion(pred, mask, blank, ruled)
+
+        # Scale the loss and step the optimizer
+        scaler.scale(loss).backward()
+        scaler.unscale_(optimizer)
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        optimizer.step()
+        scaler.step(optimizer)
+        scaler.update()
+
         total_loss += loss.item()
         bar.set_postfix(loss=f"{loss.item():.4f}")
     return total_loss / len(loader)
@@ -51,7 +56,7 @@ def val_epoch(
     model.eval()
     total_loss = 0.0
     bar = tqdm(loader, desc=f"Epoch {epoch:03d} [val]  ", unit="batch", leave=False)
-    for ruled, blank in bar:
+    for blank, ruled in bar:
         ruled, blank = ruled.to(device), blank.to(device)
         pred, mask = model(ruled)
         loss = criterion(pred, mask, blank, ruled)
