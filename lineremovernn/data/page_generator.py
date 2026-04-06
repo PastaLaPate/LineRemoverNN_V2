@@ -150,8 +150,11 @@ def _make_page_worker(image_index: int, output_dir: Path) -> None:
     _draw_lines(
         lines_draw, lines, page_width, page_height, small_lines_by_line, small_line_size
     )
-    page.paste(PIL.ImageOps.invert(lines_img), mask=lines_img)
-    page.convert("RGB").save(pages_dir / f"{image_index}-page.jpg", quality=95)
+    np_lines = np.array(lines_img)
+    blank_np = np.array(page)
+    ruled_np = np.minimum(blank_np, np_lines)
+    ruled_page = PIL.Image.fromarray(ruled_np)
+    ruled_page.convert("RGB").save(pages_dir / f"{image_index}-page.jpg", quality=95)
 
 
 class PageGenerator:
