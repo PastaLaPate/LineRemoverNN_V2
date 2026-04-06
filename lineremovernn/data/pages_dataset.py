@@ -21,15 +21,15 @@ class PagesDataset(Dataset):
                 f"Pages directory {self.pages_dir} must contain 'blank' and 'ruled' subdirectories."
             )
         self.blank_paths = sorted(
-            self.blank_dir.glob("*.jpg"), key=lambda p: int(p.name.split("-")[0])
+            self.blank_dir.glob("*.png"), key=lambda p: int(p.name.split("-")[0])
         )
         self.ruled_paths = sorted(
-            self.ruled_dir.glob("*.jpg"), key=lambda p: int(p.name.split("-")[0])
+            self.ruled_dir.glob("*.png"), key=lambda p: int(p.name.split("-")[0])
         )
 
         if len(self.blank_paths) != len(self.ruled_paths):
             raise ValueError(
-                f"Pages directory {self.pages_dir} must contain the same number of blank and ruled pages."
+                f"Pages directory {self.pages_dir} must contain the same number of blank and ruled pages. Found {len(self.blank_paths)} blank and {len(self.ruled_paths)} ruled."
             )
 
         self.transform = transform
