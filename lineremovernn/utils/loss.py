@@ -17,8 +17,12 @@ def ssim_loss(
 
     mu1_sq, mu2_sq, mu1_mu2 = mu1**2, mu2**2, mu1 * mu2
 
-    sigma1_sq = F.conv2d(pred * pred, kernel, padding=pad, groups=channel) - mu1_sq
-    sigma2_sq = F.conv2d(target * target, kernel, padding=pad, groups=channel) - mu2_sq
+    sigma1_sq = (
+        F.conv2d(pred * pred, kernel, padding=pad, groups=channel) - mu1_sq
+    ).clamp(min=0)
+    sigma2_sq = (
+        F.conv2d(target * target, kernel, padding=pad, groups=channel) - mu2_sq
+    ).clamp(min=0)
     sigma12 = F.conv2d(pred * target, kernel, padding=pad, groups=channel) - mu1_mu2
 
     ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / (
@@ -37,12 +41,19 @@ def _gaussian_kernel(size: int, sigma: float, channels: int) -> torch.Tensor:
 
 
 def criterion(pred, logits, blank, ruled):
+    # The target is the difference (the lines themselves)
     target_mask = (blank - ruled).clamp(0, 1)
 
-    # Re-create the mask for the L1 loss
-    mask = torch.sigmoid(logits)
-    mask_loss = F.l1_loss(mask, target_mask)
+    # 1. Mask Loss (Use BCE with Logits for numerical stability)
+    # This replaces the L1 loss on the mask for better gradient flow
+    mask_loss = F.binary_cross_entropy_with_logits(logits, target_mask)
 
+    # 2. Reconstruction Loss (SSIM)
+    # pred is now bounded, so SSIM won't explode
     ssim = ssim_loss(pred, blank)
 
-    return mask_loss * 0.7 + 0.3 * ssim
+    # 3. Optional: Add a small L1 penalty on the final image
+    # to ensure colors stay accurate
+    l1_reconstruction = F.l1_loss(pred, blank)
+
+    return mask_loss * 0.4 + ssim * 0.4 + l1_reconstruction * 0.2

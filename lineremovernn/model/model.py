@@ -111,4 +111,6 @@ class LineRemoverNN(nn.Module):
         d2 = self.dec2(d3, e2)
         d1 = self.dec1(d2, e1)
         logits = self.out(d1)
-        return (x - logits, logits)
+        mask = torch.sigmoid(logits)
+        pred = (x + mask).clamp(0, 1)
+        return pred, logits
