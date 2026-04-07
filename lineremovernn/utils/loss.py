@@ -45,8 +45,4 @@ def criterion(pred, logits, blank, ruled):
 
     ssim = ssim_loss(pred, blank)
 
-    presence_loss = F.binary_cross_entropy_with_logits(
-        logits, (target_mask > 0.05).float()
-    )
-
-    return mask_loss + 0.3 * ssim + 0.1 * presence_loss
+    return mask_loss * 0.7 + 0.3 * ssim

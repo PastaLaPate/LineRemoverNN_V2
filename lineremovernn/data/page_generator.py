@@ -142,7 +142,7 @@ def _make_page_worker(image_index: int, output_dir: Path) -> None:
         page.paste(word_img, (x, y - h + rn), word_img)
         x += w + random.randint(-10, 30)
 
-    page.convert("RGB").save(nolines_dir / f"{image_index}-page.jpg", quality=95)
+    page.convert("RGB").save(nolines_dir / f"{image_index}-page.png")
 
     with open(json_dir / f"{image_index}.json", "w") as f:
         json.dump(words_meta, f)
@@ -150,8 +150,12 @@ def _make_page_worker(image_index: int, output_dir: Path) -> None:
     _draw_lines(
         lines_draw, lines, page_width, page_height, small_lines_by_line, small_line_size
     )
-    page.paste(PIL.ImageOps.invert(lines_img), mask=lines_img)
-    page.convert("RGB").save(pages_dir / f"{image_index}-page.jpg", quality=95)
+    blank_np = np.array(page.convert("L"))
+    np_lines = np.array(lines_img.convert("L"))
+
+    ruled_np = np.minimum(blank_np, np_lines)
+    ruled_page = PIL.Image.fromarray(ruled_np)
+    ruled_page.save(pages_dir / f"{image_index}-page.png")
 
 
 class PageGenerator:

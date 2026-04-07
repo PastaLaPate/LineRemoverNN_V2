@@ -17,6 +17,7 @@ class GeneratePagesCommand(Command):
 
     def init_parser(self, parser):
         parser.add_argument(
+            "-d",
             "--dataset-dir",
             type=Path,
             required=False,
@@ -24,6 +25,7 @@ class GeneratePagesCommand(Command):
             help="Directory where is the downloaded dataset.",
         )
         parser.add_argument(
+            "-o",
             "--output-dir",
             type=Path,
             required=False,
@@ -31,13 +33,15 @@ class GeneratePagesCommand(Command):
             help="Directory to save the generated pages.",
         )
         parser.add_argument(
-            "--n",
+            "-n",
+            "--num-pages",
             type=int,
             required=False,
             default=50,
             help="Number of pages to generate.",
         )
         parser.add_argument(
+            "-np",
             "--disable-preload",
             action="store_true",
             default=False,
@@ -50,6 +54,6 @@ class GeneratePagesCommand(Command):
 
         logger.info("Generating pages from dataset in %s", dataset_dir)
         generator = PageGenerator(dataset_dir)
-        generator.generate(args.n, output_dir, preload=not args.disable_preload)
+        generator.generate(args.num_pages, output_dir, preload=not args.disable_preload)
 
         logger.info("Done.")

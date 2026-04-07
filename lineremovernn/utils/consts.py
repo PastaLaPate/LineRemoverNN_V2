@@ -9,7 +9,7 @@ from torch.cuda import is_available as torch_cuda_available
 ROOT = Path(__file__).parent.parent
 SAVED = ROOT.parent / "saved"
 
-DEFAULT_IAM = SAVED / "datasets/iam"
+DEFAULT_IAM = SAVED / "datasets/IAM"
 DEFAULT_PAGES = SAVED / "datasets/pages"
 DEFAULT_MODELS = SAVED / "models"
 DEFAULT_LOGS = SAVED / "logs"
