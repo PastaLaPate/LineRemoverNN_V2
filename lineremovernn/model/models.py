@@ -62,6 +62,7 @@ def save_model(
 
 def list_models(models_dir: Path = DEFAULT_MODELS) -> list[tuple[ModelStats, Path]]:
     models = []
+    models_dir.mkdir(parents=True, exist_ok=True)
     for path in models_dir.iterdir():
         if not path.is_file() or path.suffix != ".pt":
             continue
