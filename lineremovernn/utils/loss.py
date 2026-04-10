@@ -40,20 +40,5 @@ def _gaussian_kernel(size: int, sigma: float, channels: int) -> torch.Tensor:
     return kernel.expand(channels, 1, size, size).contiguous()
 
 
-def criterion(pred, logits, blank, ruled):
-    # The target is the difference (the lines themselves)
-    target_mask = (blank - ruled).clamp(0, 1)
-
-    # 1. Mask Loss (Use BCE with Logits for numerical stability)
-    # This replaces the L1 loss on the mask for better gradient flow
-    mask_loss = F.binary_cross_entropy_with_logits(logits, target_mask)
-
-    # 2. Reconstruction Loss (SSIM)
-    # pred is now bounded, so SSIM won't explode
-    ssim = ssim_loss(pred, blank)
-
-    # 3. Optional: Add a small L1 penalty on the final image
-    # to ensure colors stay accurate
-    l1_reconstruction = F.l1_loss(pred, blank)
-
-    return mask_loss * 0.4 + ssim * 0.4 + l1_reconstruction * 0.2
+def criterion(pred, blank, ruled):
+    return F.mse_loss(pred, blank) + F.l1_loss(pred, blank) + ssim_loss(pred, blank)

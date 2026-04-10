@@ -2,9 +2,6 @@ from typing import Tuple
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
-# --- Building blocks ---
 
 
 class ConvBlock(nn.Module):
@@ -110,7 +107,44 @@ class LineRemoverNN(nn.Module):
         d3 = self.dec3(d4, e3)
         d2 = self.dec2(d3, e2)
         d1 = self.dec1(d2, e1)
-        logits = self.out(d1)
-        mask = torch.sigmoid(logits)
-        pred = (x + mask).clamp(0, 1)
+        pred = self.out(d1)
+
+        return pred
+
+
+"""
+class ConvBlock(nn.Module):
+    def __init__(
+        self, in_ch: int, out_ch: int, kernel_size: int = 3, padding: int = 1
+    ) -> None:
+        super().__init__()
+        self.block = nn.Sequential(
+            nn.Conv2d(
+                in_ch, out_ch, kernel_size=kernel_size, padding=padding, bias=False
+            ),
+            nn.BatchNorm2d(out_ch),
+            nn.LeakyReLU(inplace=True),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.block(x)
+
+
+class LineRemoverNN(nn.Module):
+    def __init__(self, channels: list[int] = [32, 64, 128, 256]) -> None:
+        super().__init__()
+        ch = channels
+
+        self.c1 = ConvBlock(1, 64, kernel_size=7, padding=3)
+        self.c2 = ConvBlock(64, 64, kernel_size=7, padding=3)
+        self.c3 = ConvBlock(64, 64, kernel_size=7, padding=3)
+        self.c4 = ConvBlock(64, 1, kernel_size=3, padding=1)
+
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        c = self.c1(x)
+        c = self.c2(c)
+        c = self.c3(c)
+        logits = self.c4(c)
+        pred = (logits - x).clamp(0, 1)
         return pred, logits
+"""

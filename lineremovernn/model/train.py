@@ -31,8 +31,8 @@ def train_epoch(model, loader, optimizer, device, epoch) -> float:
 
         # Runs the forward pass in mixed precision
         with autocast("cuda"):
-            pred, logits = model(ruled)
-            loss = criterion(pred, logits, blank, ruled)
+            pred = model(ruled)
+            loss = criterion(pred, blank, ruled)
 
         # Scale the loss and step the optimizer
         scaler.scale(loss).backward()
@@ -58,8 +58,8 @@ def val_epoch(
     bar = tqdm(loader, desc=f"Epoch {epoch:03d} [val]  ", unit="batch", leave=False)
     for blank, ruled in bar:
         ruled, blank = ruled.to(device), blank.to(device)
-        pred, logits = model(ruled)
-        loss = criterion(pred, logits, blank, ruled)
+        pred = model(ruled)
+        loss = criterion(pred, blank, ruled)
         total_loss += loss.item()
         bar.set_postfix(loss=f"{loss.item():.4f}")
     return total_loss / len(loader)
