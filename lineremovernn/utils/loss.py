@@ -1,44 +1,52 @@
 import torch
-import torch.nn.functional as F
+import torch.nn as nn
 
 
-def ssim_loss(
-    pred: torch.Tensor, target: torch.Tensor, window_size: int = 11
-) -> torch.Tensor:
-    """1 - SSIM, so minimizing this maximizes structural similarity."""
-    C1, C2 = 0.01**2, 0.03**2
-    channel = pred.shape[1]
+class CombinedDiceBCEWithLogitsLoss(nn.Module):
+    """
+    Combines Dice Loss and Binary Cross-Entropy (BCE) for stable segmentation training.
+    Assumes model outputs logits (no sigmoid applied by the model).
+    """
 
-    kernel = _gaussian_kernel(window_size, 1.5, channel).to(pred.device)
-    pad = window_size // 2
+    def __init__(self, smooth=1e-6, weight_dice=0.5, weight_bce=0.5):
+        super(CombinedDiceBCEWithLogitsLoss, self).__init__()
+        self.smooth = smooth
+        self.weight_dice = weight_dice
+        self.weight_bce = weight_bce
 
-    mu1 = F.conv2d(pred, kernel, padding=pad, groups=channel)
-    mu2 = F.conv2d(target, kernel, padding=pad, groups=channel)
+        # BCEWithLogitsLoss is the preferred function as it combines sigmoid and BCE loss.
+        self.bce_loss = nn.BCEWithLogitsLoss()
 
-    mu1_sq, mu2_sq, mu1_mu2 = mu1**2, mu2**2, mu1 * mu2
+    def dice_loss(self, pred, target):
+        """Calculates the Dice Loss component."""
+        # pred and target must be logits and probabilities, respectively.
+        # Since we use BCEWithLogitsLoss, we must calculate Dice on probabilities (after sigmoid).
+        pred_prob = torch.sigmoid(pred)
 
-    sigma1_sq = (
-        F.conv2d(pred * pred, kernel, padding=pad, groups=channel) - mu1_sq
-    ).clamp(min=0)
-    sigma2_sq = (
-        F.conv2d(target * target, kernel, padding=pad, groups=channel) - mu2_sq
-    ).clamp(min=0)
-    sigma12 = F.conv2d(pred * target, kernel, padding=pad, groups=channel) - mu1_mu2
+        # Flatten the spatial dimensions (Batch * Channel * H * W)
+        pred_s = pred_prob.view(-1)
+        target_s = target.view(-1)
 
-    ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / (
-        (mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2)
-    )
+        intersection = (pred_s * target_s).sum()
+        union = pred_s.sum() + target_s.sum()
 
-    return 1 - ssim_map.mean()
+        dice_coefficient = (2.0 * intersection + self.smooth) / (union + self.smooth)
+        return 1 - dice_coefficient
 
+    def forward(self, pred, target):
+        """
+        Args:
+            pred (torch.Tensor): Model logits (N, 1, H, W).
+            target (torch.Tensor): Ground truth mask (N, 1, H, W) with float type (0.0 or 1.0).
+        Returns:
+            torch.Tensor: Combined loss value.
+        """
+        # 1. Calculate Dice Loss
+        loss_dice = self.dice_loss(pred, target)
 
-def _gaussian_kernel(size: int, sigma: float, channels: int) -> torch.Tensor:
-    coords = torch.arange(size, dtype=torch.float32) - size // 2
-    g = torch.exp(-(coords**2) / (2 * sigma**2))
-    g /= g.sum()
-    kernel = g.outer(g).unsqueeze(0).unsqueeze(0)
-    return kernel.expand(channels, 1, size, size).contiguous()
+        # 2. Calculate BCE Loss (using logits directly)
+        loss_bce = self.bce_loss(pred, target)
 
-
-def criterion(pred, blank, ruled):
-    return F.mse_loss(pred, blank) + F.l1_loss(pred, blank) + ssim_loss(pred, blank)
+        # 3. Combine losses
+        total_loss = (self.weight_dice * loss_dice) + (self.weight_bce * loss_bce)
+        return total_loss

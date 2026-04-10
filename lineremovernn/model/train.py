@@ -13,10 +13,12 @@ from lineremovernn.model.model import LineRemoverNN
 from lineremovernn.model.models import ModelState, ModelStats, save_model
 from lineremovernn.utils import logging
 from lineremovernn.utils.consts import DEVICE, SAVED
-from lineremovernn.utils.loss import criterion
+from lineremovernn.utils.loss import CombinedDiceBCEWithLogitsLoss
 from lineremovernn.utils.paired_transform import PairedTransform
 
 logger = logging.get_logger("Trainer")
+
+criterion = CombinedDiceBCEWithLogitsLoss()
 
 
 def train_epoch(model, loader, optimizer, device, epoch) -> float:
@@ -32,7 +34,7 @@ def train_epoch(model, loader, optimizer, device, epoch) -> float:
         # Runs the forward pass in mixed precision
         with autocast("cuda"):
             pred = model(ruled)
-            loss = criterion(pred, blank, ruled)
+            loss = criterion(pred, blank)
 
         # Scale the loss and step the optimizer
         scaler.scale(loss).backward()
@@ -59,7 +61,7 @@ def val_epoch(
     for blank, ruled in bar:
         ruled, blank = ruled.to(device), blank.to(device)
         pred = model(ruled)
-        loss = criterion(pred, blank, ruled)
+        loss = criterion(pred, blank)
         total_loss += loss.item()
         bar.set_postfix(loss=f"{loss.item():.4f}")
     return total_loss / len(loader)
@@ -96,7 +98,7 @@ def run(
         persistent_workers=True,
     )
 
-    model = LineRemoverNN(channels=channels).to(device)
+    model = LineRemoverNN(in_channels=1).to(device)
     total_params = sum(p.numel() for p in model.parameters()) / 1e6
     logger.info("Model parameters: %.2fM", total_params)
 
